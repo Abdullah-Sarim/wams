@@ -19,6 +19,36 @@ const ORDER_STATUS = {
     PENDING: 'pending',
     APPROVED: 'approved',
     COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
+    RAW_MATERIALS_ORDERED: 'raw_materials_ordered',
+    RAW_MATERIALS_RECEIVED: 'raw_materials_received',
+    IN_PRODUCTION: 'in_production',
+    PRODUCTION_FINISHED: 'production_finished'
+};
+
+const DEALER_ORDER_STATUS = {
+    PENDING: 'pending',
+    AUTO_APPROVED: 'auto_approved',
+    BILL_GENERATED: 'bill_generated',
+    IN_PRODUCTION: 'in_production',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled'
+};
+
+const RAW_MATERIAL_STATUS = {
+    PENDING: 'pending',
+    QUOTATION_REQUESTED: 'quotation_requested',
+    QUOTATION_RECEIVED: 'quotation_received',
+    ORDERED: 'ordered',
+    RECEIVED: 'received',
+    REJECTED: 'rejected'
+};
+
+const PRODUCTION_STATUS = {
+    PENDING: 'pending',
+    STARTED: 'started',
+    IN_PRODUCTION: 'in_production',
+    FINISHED: 'finished',
     CANCELLED: 'cancelled'
 };
 
@@ -110,9 +140,11 @@ async function initializeDatabase() {
             product_code TEXT UNIQUE,
             description TEXT,
             category TEXT,
+            product_type TEXT DEFAULT 'finished_product',
             unit TEXT DEFAULT 'pcs',
             min_stock_level INTEGER DEFAULT 10,
             current_stock INTEGER DEFAULT 0,
+            reserved_stock INTEGER DEFAULT 0,
             reorder_level INTEGER DEFAULT 10,
             unit_price REAL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -131,6 +163,38 @@ async function initializeDatabase() {
             notes TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (product_id) REFERENCES inventory(id)
+        );
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS raw_material_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            finished_product_id INTEGER NOT NULL,
+            required_quantity INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            expected_delivery_date DATE,
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (finished_product_id) REFERENCES inventory(id)
+        );
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS raw_material_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            raw_material_request_id INTEGER NOT NULL,
+            supplier_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            unit_price REAL NOT NULL,
+            total_price REAL NOT NULL,
+            status TEXT DEFAULT 'pending',
+            expected_delivery_date DATE,
+            actual_delivery_date DATE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (raw_material_request_id) REFERENCES raw_material_requests(id),
+            FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
         );
     `);
 
@@ -356,6 +420,9 @@ module.exports = {
     saveDatabase,
     USER_ROLES,
     ORDER_STATUS,
+    DEALER_ORDER_STATUS,
+    RAW_MATERIAL_STATUS,
+    PRODUCTION_STATUS,
     PRODUCT_TYPES,
     TRANSACTION_TYPES
 };

@@ -42,6 +42,7 @@ const searchFilterRoutes = require('./server/routes/searchFilter');
 const notificationsRoutes = require('./server/routes/notifications');
 const reportingRoutes = require('./server/routes/reporting');
 const systemMaintenanceRoutes = require('./server/routes/systemMaintenance');
+const workflowRoutes = require('./server/routes/workflow');
 
 app.use('/api/system-authorization', authRoutes);
 app.use('/api/user-management', conditionalAuth, userManagementRoutes);
@@ -57,6 +58,7 @@ app.use('/api/search-filter', conditionalAuth, searchFilterRoutes);
 app.use('/api/notifications', conditionalAuth, notificationsRoutes);
 app.use('/api/reporting', conditionalAuth, requireRole('Administrator', 'Manager', 'Management Authority'), reportingRoutes);
 app.use('/api/system-maintenance', conditionalAuth, requireRole('Administrator'), systemMaintenanceRoutes);
+app.use('/api/workflow', conditionalAuth, workflowRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

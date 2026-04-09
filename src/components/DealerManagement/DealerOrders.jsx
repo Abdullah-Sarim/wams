@@ -38,12 +38,25 @@ const DealerOrders = () => {
   };
 
   const handleStatusChange = async (orderId, status) => {
-    await fetch(`/api/dealer-management/update-dealer-order/${orderId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
-    });
-    fetchData();
+    try {
+      const response = await fetch(`/api/workflow/update-order-status/${orderId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (data.success) {
+        fetchData();
+        if (data.billGenerated) {
+          setError('');
+          alert(`Bill generated: ${data.billNumber} - Rs. ${data.totalAmount}`);
+        }
+      } else {
+        setError(data.message || 'Failed to update status');
+      }
+    } catch (err) { 
+      setError('Failed to update status'); 
+    }
   };
 
   return (
@@ -64,7 +77,7 @@ const DealerOrders = () => {
       </div>
       <table>
         <thead><tr><th>ID</th><th>Dealer</th><th>Product</th><th>Quantity</th><th>Order Date</th><th>Delivery Date</th><th>Status</th></tr></thead>
-        <tbody>{orders.map(o => <tr key={o.id}><td>{o.id}</td><td>{o.dealer_name}</td><td>{o.product_name}</td><td>{o.quantity}</td><td>{o.order_date}</td><td>{o.delivery_date}</td><td><select value={o.status} onChange={(e) => handleStatusChange(o.id, e.target.value)}><option value="pending">Pending</option><option value="approved">Approved</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></td></tr>)}</tbody>
+        <tbody>{orders.map(o => <tr key={o.id}><td>{o.id}</td><td>{o.dealer_name}</td><td>{o.product_name}</td><td>{o.quantity}</td><td>{o.order_date}</td><td>{o.delivery_date}</td><td><select value={o.status} onChange={(e) => handleStatusChange(o.id, e.target.value)}><option value="pending">Pending</option><option value="approved">Approved</option><option value="completed">Completed</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option></select></td></tr>)}</tbody>
       </table>
     </div>
   );

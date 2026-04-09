@@ -85,11 +85,72 @@ router.get('/dealer/notifications', (req, res) => {
         
         const notifications = getAll(`
             SELECT * FROM notifications 
-            WHERE (user_id = ? OR user_id IS NULL)
+            WHERE user_id = ?
             ORDER BY created_at DESC
         `, [dealerId]);
         
         res.json({ success: true, notifications });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/dealer/profile', (req, res) => {
+    try {
+        const dealerId = req.session.userId;
+        if (!dealerId) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+        
+        const dealer = getOne("SELECT id, name, contact_person, email, phone, address, created_at FROM dealers WHERE id = ?", [dealerId]);
+        
+        if (!dealer) {
+            return res.status(404).json({ success: false, message: 'Dealer not found' });
+        }
+        
+        res.json({ success: true, dealer });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/dealer/bills', (req, res) => {
+    try {
+        const dealerId = req.session.userId;
+        if (!dealerId) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+        
+        const bills = getAll(`
+            SELECT b.*, 
+                   (SELECT SUM(total_price) FROM bill_items WHERE bill_id = b.id) as total_items
+            FROM bills b
+            WHERE b.dealer_id = ?
+            ORDER BY b.created_at DESC
+        `, [dealerId]);
+        
+        res.json({ success: true, bills });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/dealer/bills/:id', (req, res) => {
+    try {
+        const dealerId = req.session.userId;
+        if (!dealerId) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+        
+        const bill = getOne("SELECT * FROM bills WHERE id = ? AND dealer_id = ?", [req.params.id, dealerId]);
+        
+        if (!bill) {
+            return res.status(404).json({ success: false, message: 'Bill not found' });
+        }
+        
+        const items = getAll("SELECT bi.*, i.product_name FROM bill_items bi JOIN inventory i ON bi.product_id = i.id WHERE bi.bill_id = ?", [bill.id]);
+        
+        res.json({ success: true, bill, items });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

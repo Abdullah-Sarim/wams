@@ -14,10 +14,10 @@ const DealerLayout = ({ children }) => {
 
   const fetchDealerInfo = async () => {
     try {
-      const res = await fetch('/api/system-authorization/current-user');
+      const res = await fetch('/api/dealer-portal/dealer/profile');
       const data = await res.json();
-      if (data.user) {
-        setDealer(data.user);
+      if (data.success) {
+        setDealer(data.dealer);
       }
     } catch (err) {}
   };

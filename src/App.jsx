@@ -8,6 +8,7 @@ import ChangePassword from './components/Auth/ChangePassword';
 import UserProfile from './components/UserManagement/UserProfile';
 import ManageUserRole from './components/UserManagement/ManageUserRole';
 import CreateDealerProfile from './components/DealerManagement/CreateDealerProfile';
+import ListDealers from './components/DealerManagement/ListDealers';
 import UpdateDealerProfile from './components/DealerManagement/UpdateDealerProfile';
 import DeleteDealerProfile from './components/DealerManagement/DeleteDealerProfile';
 import DealerOrders from './components/DealerManagement/DealerOrders';
@@ -124,6 +125,7 @@ function App() {
         <Route path="/user-management/manage-user-role" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ManageUserRole /></ProtectedRoute>} />
         
         <Route path="/dealer-management/create-dealer-profile" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateDealerProfile /></ProtectedRoute>} />
+        <Route path="/dealer-management/list-dealers" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><ListDealers /></ProtectedRoute>} />
         <Route path="/dealer-management/update-dealer-profile/:id" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><UpdateDealerProfile /></ProtectedRoute>} />
         <Route path="/dealer-management/delete-dealer-profile/:id" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><DeleteDealerProfile /></ProtectedRoute>} />
         <Route path="/dealer-management/dealers-orders" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><DealerOrders /></ProtectedRoute>} />
