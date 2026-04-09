@@ -11,7 +11,8 @@ const USER_ROLES = {
     MANAGER: 'Manager',
     DEALER: 'Dealer',
     SUPPLIER: 'Supplier',
-    MANAGEMENT_AUTHORITY: 'Management Authority'
+    MANAGEMENT_AUTHORITY: 'Management Authority',
+    PRODUCTION_MANAGER: 'Production Manager'
 };
 
 const ORDER_STATUS = {
@@ -157,6 +158,7 @@ async function initializeDatabase() {
             status TEXT DEFAULT 'pending',
             start_date DATE,
             end_date DATE,
+            expected_delivery_date DATE,
             notes TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -247,8 +249,15 @@ function seedDatabase() {
         db.run(`INSERT INTO users (username, password, role, name, email) VALUES (?, ?, ?, ?, ?)`, ['manager', bcrypt.hashSync('manager123', 10), USER_ROLES.MANAGER, 'Manager User', 'manager@wams.com']);
         db.run(`INSERT INTO users (username, password, role, name, email) VALUES (?, ?, ?, ?, ?)`, ['staff', bcrypt.hashSync('staff123', 10), USER_ROLES.USER, 'Staff User', 'staff@wams.com']);
         db.run(`INSERT INTO users (username, password, role, name, email) VALUES (?, ?, ?, ?, ?)`, ['auth', bcrypt.hashSync('auth123', 10), USER_ROLES.MANAGEMENT_AUTHORITY, 'Management Authority', 'auth@wams.com']);
-
+        db.run(`INSERT INTO users (username, password, role, name, email) VALUES (?, ?, ?, ?, ?)`, ['prodmanager', bcrypt.hashSync('pm123', 10), USER_ROLES.PRODUCTION_MANAGER, 'Production Manager', 'pm@wams.com']);
+        
         console.log('Default users seeded');
+    } else {
+        const pmExists = db.exec("SELECT id FROM users WHERE username = 'prodmanager'");
+        if (pmExists.length === 0 || pmExists[0].values.length === 0) {
+            db.run(`INSERT INTO users (username, password, role, name, email) VALUES (?, ?, ?, ?, ?)`, ['prodmanager', bcrypt.hashSync('pm123', 10), USER_ROLES.PRODUCTION_MANAGER, 'Production Manager', 'pm@wams.com']);
+            console.log('Production Manager user seeded');
+        }
     }
 
     const dealersExist = db.exec("SELECT COUNT(*) as count FROM dealers");

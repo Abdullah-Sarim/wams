@@ -20,6 +20,10 @@ function verifyToken(token) {
 
 function requireRole(...allowedRoles) {
     return (req, res, next) => {
+        if (req.session && req.session.userRole && allowedRoles.includes(req.session.userRole)) {
+            return next();
+        }
+
         const authHeader = req.headers.authorization;
         
         if (!authHeader || !authHeader.startsWith('Bearer ')) {

@@ -41,6 +41,12 @@ import SupplierDashboard from './components/SupplierPortal/SupplierDashboard';
 import SupplierQuotations from './components/SupplierPortal/SupplierQuotations';
 import SupplierNotifications from './components/SupplierPortal/SupplierNotifications';
 import SupplierProfile from './components/SupplierPortal/SupplierProfile';
+import ProductionManagerLayout from './components/ProductionManager/ProductionManagerLayout';
+import ProductionManagerDashboard from './components/ProductionManager/ProductionManagerDashboard';
+import ProductionManagerOrders from './components/ProductionManager/ProductionManagerOrders';
+import CreateProductionOrder from './components/ProductionManager/CreateProductionOrder';
+import RawMaterials from './components/ProductionManager/RawMaterials';
+import FinishedProducts from './components/ProductionManager/FinishedProducts';
 
 const ADMIN_ROLES = ['Administrator', 'Manager', 'Management Authority'];
 
@@ -91,6 +97,17 @@ function SupplierProtectedRoute({ children }) {
   return <SupplierLayout>{children}</SupplierLayout>;
 }
 
+function ProductionManagerProtectedRoute({ children }) {
+  const [loading, setLoading] = useState(true);
+  const [isPM, setIsPM] = useState(false);
+  useEffect(() => {
+    fetch('/api/check-session').then(r => r.json()).then(d => { if (d.authenticated && d.userRole === 'Production Manager') setIsPM(true); setLoading(false); });
+  }, []);
+  if (loading) return <div className="loading-screen">Loading...</div>;
+  if (!isPM) return <Navigate to="/login" replace />;
+  return <ProductionManagerLayout>{children}</ProductionManagerLayout>;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -118,7 +135,7 @@ function App() {
         <Route path="/supplier-management/supplier-detail" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><SupplierDetail /></ProtectedRoute>} />
         <Route path="/supplier-management/supplier-quotations" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><SupplierQuotationsAdmin /></ProtectedRoute>} />
         
-        <Route path="/manufacturing/create-manufacturing-order" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><CreateManufacturingOrder /></ProtectedRoute>} />
+        <Route path="/manufacturing/create-manufacturing-order" element={<ProtectedRoute allowedRoles={[...ADMIN_ROLES, 'Production Manager']}><CreateManufacturingOrder /></ProtectedRoute>} />
         <Route path="/manufacturing/manufacturing-completion" element={<ProtectedRoute><ManufacturingCompletion /></ProtectedRoute>} />
         
         <Route path="/billing-payment/generate-bill" element={<ProtectedRoute allowedRoles={ADMIN_ROLES}><GenerateBill /></ProtectedRoute>} />
@@ -145,6 +162,12 @@ function App() {
         <Route path="/supplier/quotations" element={<SupplierProtectedRoute><SupplierQuotations /></SupplierProtectedRoute>} />
         <Route path="/supplier/notifications" element={<SupplierProtectedRoute><SupplierNotifications /></SupplierProtectedRoute>} />
         <Route path="/supplier/profile" element={<SupplierProtectedRoute><SupplierProfile /></SupplierProtectedRoute>} />
+        
+        <Route path="/production-manager/dashboard" element={<ProductionManagerProtectedRoute><ProductionManagerDashboard /></ProductionManagerProtectedRoute>} />
+        <Route path="/production-manager/orders" element={<ProductionManagerProtectedRoute><ProductionManagerOrders /></ProductionManagerProtectedRoute>} />
+        <Route path="/production-manager/create-order" element={<ProductionManagerProtectedRoute><CreateProductionOrder /></ProductionManagerProtectedRoute>} />
+        <Route path="/production-manager/raw-materials" element={<ProductionManagerProtectedRoute><RawMaterials /></ProductionManagerProtectedRoute>} />
+        <Route path="/production-manager/finished-products" element={<ProductionManagerProtectedRoute><FinishedProducts /></ProductionManagerProtectedRoute>} />
         
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

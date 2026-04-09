@@ -7,6 +7,9 @@ function requireAuth(req, res, next) {
 
 function requireRole(...roles) {
     return (req, res, next) => {
+        if (req.session && req.session.userRole && roles.includes(req.session.userRole)) {
+            return next();
+        }
         if (!req.session || !req.session.userRole) {
             return res.status(401).json({ success: false, message: 'Unauthorized' });
         }
@@ -27,7 +30,9 @@ function conditionalAuth(req, res, next) {
         '/change-password',
         '/check-session',
         '/create-dealer-profile',
-        '/suppliers'
+        '/suppliers',
+        '/system-authorization/login',
+        '/system-authorization/signup'
     ];
     
     const isPublicPath = publicPaths.some(path => req.path.includes(path));
