@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { runQuery, getOne, getAll, getLastInsertId, USER_ROLES } = require('../../database');
+const { generateToken } = require('../middleware/requireRole');
 
 const router = express.Router();
 
@@ -9,12 +10,22 @@ router.post('/login', (req, res) => {
         const { username, password, userType } = req.body;
         
         if (userType === 'dealer') {
-            const dealer = getOne("SELECT * FROM dealers WHERE username = ? OR email = ?", [username, username]);
+            const dealer = getOne("SELECT * FROM dealers WHERE email = ?", [username]);
             if (dealer && bcrypt.compareSync(password, dealer.password)) {
                 req.session.userId = dealer.id;
                 req.session.userType = 'dealer';
                 req.session.userRole = 'Dealer';
-                return res.json({ success: true, user: { id: dealer.id, name: dealer.name, role: 'Dealer' }, userType: 'dealer' });
+                const token = generateToken({ id: dealer.id, username: dealer.name, role: 'Dealer' });
+                return res.json({ success: true, user: { id: dealer.id, name: dealer.name, role: 'Dealer' }, userType: 'dealer', token });
+            }
+        } else if (userType === 'supplier') {
+            const supplier = getOne("SELECT * FROM suppliers WHERE email = ?", [username]);
+            if (supplier && bcrypt.compareSync(password, supplier.password)) {
+                req.session.userId = supplier.id;
+                req.session.userType = 'supplier';
+                req.session.userRole = 'Supplier';
+                const token = generateToken({ id: supplier.id, username: supplier.name, role: 'Supplier' });
+                return res.json({ success: true, user: { id: supplier.id, name: supplier.name, role: 'Supplier' }, userType: 'supplier', token });
             }
         } else {
             const user = getOne("SELECT * FROM users WHERE username = ?", [username]);
@@ -22,7 +33,8 @@ router.post('/login', (req, res) => {
                 req.session.userId = user.id;
                 req.session.userType = 'staff';
                 req.session.userRole = user.role;
-                return res.json({ success: true, user: { id: user.id, name: user.name, role: user.role }, userType: 'staff' });
+                const token = generateToken(user);
+                return res.json({ success: true, user: { id: user.id, name: user.name, role: user.role }, userType: 'staff', token });
             }
         }
         

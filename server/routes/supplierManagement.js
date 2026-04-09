@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const { getOne, getAll, runQuery, getLastInsertId } = require('../../database');
 
 router.get('/suppliers', (req, res) => {
@@ -25,9 +26,10 @@ router.get('/suppliers/:id', (req, res) => {
 
 router.post('/suppliers', (req, res) => {
     try {
-        const { name, contact_person, email, phone, address } = req.body;
-        runQuery("INSERT INTO suppliers (name, contact_person, email, phone, address) VALUES (?, ?, ?, ?, ?)",
-            [name, contact_person, email, phone, address]);
+        const { name, contact_person, email, phone, address, password } = req.body;
+        const hashedPassword = bcrypt.hashSync(password || 'supplier123', 10);
+        runQuery("INSERT INTO suppliers (name, contact_person, email, phone, address, password) VALUES (?, ?, ?, ?, ?, ?)",
+            [name, contact_person, email, phone, address, hashedPassword]);
         res.json({ success: true, supplierId: getLastInsertId(), message: 'Supplier created successfully' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

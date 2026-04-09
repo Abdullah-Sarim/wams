@@ -21,9 +21,18 @@ const Login = () => {
       const data = await response.json();
 
       if (data.success) {
-        window.location.href = data.userType === 'dealer' 
-          ? '/dealer-management/dealers-orders' 
-          : '/stock-management/track-inventory';
+        localStorage.setItem('token', data.token || '');
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userType', data.userType);
+        
+        if (data.userType === 'dealer') {
+          window.location.href = '/dealer/dashboard';
+        } else if (data.userType === 'supplier') {
+          window.location.href = '/supplier/dashboard';
+        } else {
+          window.location.href = '/dashboard';
+        }
       } else {
         setError(data.message || 'Invalid credentials');
       }
@@ -46,12 +55,13 @@ const Login = () => {
             <select value={userType} onChange={(e) => setUserType(e.target.value)}>
               <option value="staff">Staff</option>
               <option value="dealer">Dealer</option>
+              <option value="supplier">Supplier</option>
             </select>
           </div>
           
           <div className="form-group">
-            <label>Username</label>
-            <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <label>{userType === 'dealer' || userType === 'supplier' ? 'Email' : 'Username'}</label>
+            <input type={userType === 'dealer' || userType === 'supplier' ? 'email' : 'text'} value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
           
           <div className="form-group">

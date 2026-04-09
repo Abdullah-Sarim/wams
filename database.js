@@ -93,9 +93,10 @@ async function initializeDatabase() {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             contact_person TEXT,
-            email TEXT,
+            email TEXT UNIQUE,
             phone TEXT,
             address TEXT,
+            password TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );

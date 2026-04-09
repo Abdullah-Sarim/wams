@@ -88,8 +88,31 @@ router.post('/create-dealer-order', (req, res) => {
 router.put('/update-dealer-order/:id', (req, res) => {
     try {
         const { quantity, status, delivery_date, notes } = req.body;
+        const order = getOne("SELECT * FROM dealers_orders WHERE id = ?", [req.params.id]);
+        
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+        
         runQuery("UPDATE dealers_orders SET quantity = ?, status = ?, delivery_date = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             [quantity, status, delivery_date, notes, req.params.id]);
+        
+        if (status === 'approved') {
+            const product = getOne("SELECT * FROM inventory WHERE id = ?", [order.product_id]);
+            const newStock = product.current_stock - order.quantity;
+            runQuery("UPDATE inventory SET current_stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [newStock, order.product_id]);
+            
+            runQuery("INSERT INTO stock_transactions (product_id, transaction_type, quantity, reference_type, reference_id, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                [order.product_id, 'sale', order.quantity, 'dealer_order', req.params.id, 'Dealer order approved']);
+            
+            runQuery("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+                [order.dealer_id, 'Order Approved', `Your order #${req.params.id} has been approved`, 'order_status']);
+        } else if (status === 'rejected') {
+            runQuery("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+                [order.dealer_id, 'Order Rejected', `Your order #${req.params.id} has been rejected`, 'order_status']);
+        }
+        
         res.json({ success: true, message: 'Dealer order updated successfully' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

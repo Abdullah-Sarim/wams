@@ -25,10 +25,12 @@ function conditionalAuth(req, res, next) {
         '/session',
         '/current-user',
         '/change-password',
-        '/check-session'
+        '/check-session',
+        '/create-dealer-profile',
+        '/suppliers'
     ];
     
-    const isPublicPath = publicPaths.some(path => req.path.startsWith(path));
+    const isPublicPath = publicPaths.some(path => req.path.includes(path));
     
     if (isPublicPath) {
         return next();

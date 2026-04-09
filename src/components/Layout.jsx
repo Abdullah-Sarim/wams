@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+const ADMIN_ROLES = ['Administrator', 'Manager', 'Management Authority'];
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -21,6 +25,7 @@ const Layout = ({ children }) => {
         const userData = await userRes.json();
         if (userData.user) {
           setUser(userData.user);
+          setUserRole(localStorage.getItem('userRole') || userData.user.role);
         }
       } else {
         window.location.href = '/login';
@@ -41,35 +46,44 @@ const Layout = ({ children }) => {
   };
 
   const handleLogout = async () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userType');
     await fetch('/api/system-authorization/logout', { method: 'POST' });
     window.location.href = '/login';
   };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/user-management/user-profile', label: 'User Profile', icon: '👤' },
-    { path: '/user-management/manage-user-role', label: 'Manage Users', icon: '👥' },
-    { path: '/dealer-management/create-dealer-profile', label: 'Dealer Management', icon: '🏪' },
-    { path: '/dealer-management/dealers-orders', label: 'Dealer Orders', icon: '📦' },
-    { path: '/stock-management/track-inventory', label: 'Track Inventory', icon: '📋' },
-    { path: '/stock-management/update-stock', label: 'Update Stock', icon: '🔄' },
-    { path: '/stock-management/set-reorder-levels', label: 'Set Reorder Levels', icon: '⚙️' },
-    { path: '/supplier-management/supplier-detail', label: 'Suppliers', icon: '🚚' },
-    { path: '/supplier-management/supplier-quotations', label: 'Quotations', icon: '📄' },
-    { path: '/manufacturing/create-manufacturing-order', label: 'Manufacturing', icon: '🏭' },
-    { path: '/manufacturing/manufacturing-completion', label: 'Production', icon: '✅' },
-    { path: '/billing-payment/generate-bill', label: 'Generate Bill', icon: '💰' },
-    { path: '/billing-payment/payment-tracking', label: 'Payments', icon: '💳' },
-    { path: '/search-filter', label: 'Search', icon: '🔍' },
-    { path: '/notifications', label: 'Notifications', icon: '🔔', badge: notifications.length },
-    { path: '/notifications/system-alerts', label: 'System Alerts', icon: '⚠️' },
-    { path: '/reporting/sales-report', label: 'Sales Report', icon: '📈' },
-    { path: '/reporting/stock-report', label: 'Stock Report', icon: '📉' },
-    { path: '/reporting/supplier-report', label: 'Supplier Report', icon: '📊' },
-    { path: '/system-maintenance/data-backup', label: 'Data Backup', icon: '💾' },
-    { path: '/system-maintenance/data-recovery', label: 'Data Recovery', icon: '🔧' },
-    { path: '/system-authorization/change-password', label: 'Change Password', icon: '🔑' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊', roles: null },
+    { path: '/user-management/user-profile', label: 'User Profile', icon: '👤', roles: null },
+    { path: '/user-management/manage-user-role', label: 'Manage Users', icon: '👥', roles: ADMIN_ROLES },
+    { path: '/dealer-management/create-dealer-profile', label: 'Dealer Management', icon: '🏪', roles: ADMIN_ROLES },
+    { path: '/dealer-management/dealers-orders', label: 'Dealer Orders', icon: '📦', roles: null },
+    { path: '/stock-management/track-inventory', label: 'Track Inventory', icon: '📋', roles: null },
+    { path: '/stock-management/update-stock', label: 'Update Stock', icon: '🔄', roles: null },
+    { path: '/stock-management/set-reorder-levels', label: 'Set Reorder Levels', icon: '⚙️', roles: null },
+    { path: '/supplier-management/supplier-detail', label: 'Suppliers', icon: '🚚', roles: ADMIN_ROLES },
+    { path: '/supplier-management/supplier-quotations', label: 'Quotations', icon: '📄', roles: ADMIN_ROLES },
+    { path: '/manufacturing/create-manufacturing-order', label: 'Manufacturing', icon: '🏭', roles: ADMIN_ROLES },
+    { path: '/manufacturing/manufacturing-completion', label: 'Production', icon: '✅', roles: null },
+    { path: '/billing-payment/generate-bill', label: 'Generate Bill', icon: '💰', roles: ADMIN_ROLES },
+    { path: '/billing-payment/payment-tracking', label: 'Payments', icon: '💳', roles: ADMIN_ROLES },
+    { path: '/search-filter', label: 'Search', icon: '🔍', roles: null },
+    { path: '/notifications', label: 'Notifications', icon: '🔔', roles: null, badge: notifications.length },
+    { path: '/notifications/system-alerts', label: 'System Alerts', icon: '⚠️', roles: null },
+    { path: '/reporting/sales-report', label: 'Sales Report', icon: '📈', roles: ADMIN_ROLES },
+    { path: '/reporting/stock-report', label: 'Stock Report', icon: '📉', roles: ADMIN_ROLES },
+    { path: '/reporting/supplier-report', label: 'Supplier Report', icon: '📊', roles: ADMIN_ROLES },
+    { path: '/system-maintenance/data-backup', label: 'Data Backup', icon: '💾', roles: ['Administrator'] },
+    { path: '/system-maintenance/data-recovery', label: 'Data Recovery', icon: '🔧', roles: ['Administrator'] },
+    { path: '/system-authorization/change-password', label: 'Change Password', icon: '🔑', roles: null },
   ];
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!item.roles) return true;
+    return item.roles.includes(userRole);
+  });
 
   return (
     <div className="app-layout">
@@ -81,7 +95,7 @@ const Layout = ({ children }) => {
           </button>
         </div>
         <nav className="sidebar-nav">
-          {menuItems.map(item => (
+          {filteredMenuItems.map(item => (
             <Link 
               key={item.path} 
               to={item.path} 
@@ -101,7 +115,7 @@ const Layout = ({ children }) => {
           {user && (
             <div className="user-info">
               <span className="user-name">{user.name}</span>
-              <span className="user-role">{user.role}</span>
+              <span className="user-role">{userRole}</span>
             </div>
           )}
           <button className="logout-btn" onClick={handleLogout}>Logout</button>
