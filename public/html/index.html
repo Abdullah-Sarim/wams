@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAMS - Web Based Automated Manufacturing System</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app" style="display: none;">
+    <div class="container">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>WAMS</h2>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-item active" data-page="index" onclick="navigateTo('index')">
+            <span>Dashboard</span>
+          </a>
+          <a class="nav-item" data-page="dealers" onclick="navigateTo('dealers')">
+            <span>Dealers</span>
+          </a>
+          <a class="nav-item" data-page="suppliers" onclick="navigateTo('suppliers')">
+            <span>Suppliers</span>
+          </a>
+          <a class="nav-item" data-page="products" onclick="navigateTo('products')">
+            <span>Products</span>
+          </a>
+          <a class="nav-item" data-page="requests" onclick="navigateTo('requests')">
+            <span>Dealer Requests</span>
+          </a>
+          <a class="nav-item" data-page="quotations" onclick="navigateTo('quotations')">
+            <span>Quotations</span>
+          </a>
+          <a class="nav-item" data-page="purchase-orders" onclick="navigateTo('purchase-orders')">
+            <span>Purchase Orders</span>
+          </a>
+          <a class="nav-item" data-page="billing" onclick="navigateTo('billing')">
+            <span>Billing</span>
+          </a>
+          <a class="nav-item" data-page="production" onclick="navigateTo('production')">
+            <span>Production</span>
+          </a>
+          <a class="nav-item" data-page="reports" onclick="navigateTo('reports')">
+            <span>Reports</span>
+          </a>
+        </nav>
+      </aside>
+      
+      <main class="main-content">
+        <header class="header">
+          <h1 class="header-title" id="pageTitle">Dashboard</h1>
+          <div class="header-user">
+            <span id="userName"></span>
+            <span class="badge badge-pending" id="userRole"></span>
+            <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+          </div>
+        </header>
+        
+        <div class="content" id="pageContent">
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/app.js"></script>
+  
+  <!-- Page Modules -->
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/dealers.js"></script>
+  <script src="js/pages/suppliers.js"></script>
+  <script src="js/pages/products.js"></script>
+  <script src="js/pages/requests.js"></script>
+  <script src="js/pages/quotations.js"></script>
+  <script src="js/pages/purchaseOrders.js"></script>
+  <script src="js/pages/billing.js"></script>
+  <script src="js/pages/production.js"></script>
+  <script src="js/pages/reports.js"></script>
+</body>
+</html>

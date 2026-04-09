@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAMS - Dealer Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="app" style="display: none;">
+    <div class="container">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>WAMS</h2>
+          <p class="subtitle">Dealer Portal</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-item active" data-page="new-order" onclick="navigateTo('new-order')">
+            <span>New Order</span>
+          </a>
+          <a class="nav-item" data-page="my-orders" onclick="navigateTo('my-orders')">
+            <span>My Orders</span>
+          </a>
+        </nav>
+      </aside>
+      
+      <main class="main-content">
+        <header class="header">
+          <h1 class="header-title" id="pageTitle">New Order</h1>
+          <div class="header-user">
+            <span id="dealerName"></span>
+            <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
+          </div>
+        </header>
+        
+        <div class="content" id="pageContent">
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script src="/js/api.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    let currentDealer = null;
+    let currentPage = 'new-order';
+
+    async function init() {
+      try {
+        currentDealer = await API.auth.currentUser();
+        if (currentDealer.user.type !== 'dealer') {
+          window.location.href = '/';
+          return;
+        }
+        showApp();
+        navigateTo('new-order');
+      } catch (err) {
+        window.location.href = '/dealer-login.html';
+      }
+    }
+
+    function showApp() {
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('dealerName').textContent = currentDealer.user.name;
+    }
+
+    async function logout() {
+      try {
+        await API.auth.logout();
+      } catch (e) {}
+      window.location.href = '/dealer-login.html';
+    }
+
+    function navigateTo(page) {
+      currentPage = page;
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.page === page);
+      });
+      
+      const titles = {
+        'new-order': 'Place New Order',
+        'my-orders': 'My Orders'
+      };
+      document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
+      
+      const content = document.getElementById('pageContent');
+      content.innerHTML = '<div class="flex items-center justify-center p-4"><div class="loading-spinner spinner-lg"></div></div>';
+      
+      if (page === 'new-order') loadNewOrderPage(content);
+      else if (page === 'my-orders') loadMyOrdersPage(content);
+    }
+
+    async function loadNewOrderPage(content) {
+      try {
+        const products = await API.products.list();
+        const dealers = await API.dealers.list();
+        const currentDealerData = dealers.find(d => d.email === currentDealer.user.email);
+        
+        let productOptions = products.map(p => 
+          `<option value="${p.id}" data-price="${p.price}" data-stock="${p.current_stock}">${p.name} - $${p.price} (Stock: ${p.current_stock})</option>`
+        ).join('');
+
+        content.innerHTML = `
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Place Order</h2>
+            </div>
+            <form id="orderForm">
+              <div class="form-group">
+                <label>Product</label>
+                <select name="product_id" required>${productOptions}</select>
+              </div>
+              <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" name="quantity" min="1" value="1" required>
+              </div>
+              <div class="form-group">
+                <label>Notes</label>
+                <textarea name="notes" placeholder="Any special instructions..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Total Amount</label>
+                <input type="text" id="totalAmount" readonly>
+              </div>
+              <button type="submit" class="btn btn-success">Submit Order</button>
+            </form>
+          </div>
+        `;
+
+        const form = document.getElementById('orderForm');
+        const productSelect = form.querySelector('select[name="product_id"]');
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        
+        function updateTotal() {
+          const option = productSelect.options[productSelect.selectedIndex];
+          const price = parseFloat(option.dataset.price) || 0;
+          const qty = parseInt(quantityInput.value) || 0;
+          document.getElementById('totalAmount').value = '$' + (price * qty).toFixed(2);
+        }
+        
+        productSelect.addEventListener('change', updateTotal);
+        quantityInput.addEventListener('input', updateTotal);
+        updateTotal();
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          try {
+            await API.requests.create({
+              dealer_id: currentDealerData.id,
+              product_id: parseInt(formData.get('product_id')),
+              quantity: parseInt(formData.get('quantity')),
+              notes: formData.get('notes')
+            });
+            alert('Order placed successfully!');
+            navigateTo('my-orders');
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      } catch (err) {
+        content.innerHTML = '<div class="alert alert-danger">Error loading products</div>';
+      }
+    }
+
+    async function loadMyOrdersPage(content) {
+      try {
+        const requests = await API.requests.list();
+        const products = await API.products.list();
+        const dealers = await API.dealers.list();
+        
+        const currentDealerData = dealers.find(d => d.email === currentDealer.user.email);
+        const myRequests = requests.filter(r => r.dealer_id === currentDealerData.id);
+        
+        const getProductName = (id) => {
+          const p = products.find(p => p.id === id);
+          return p ? p.name : 'Unknown';
+        };
+
+        if (myRequests.length === 0) {
+          content.innerHTML = '<div class="card"><div class="table-empty">No orders yet</div></div>';
+          return;
+        }
+
+        let rows = myRequests.map(r => `
+          <tr>
+            <td>${r.id}</td>
+            <td>${getProductName(r.product_id)}</td>
+            <td>${r.quantity}</td>
+            <td><span class="badge badge-${r.status}">${r.status}</span></td>
+            <td>${r.requested_date || '-'}</td>
+            <td>${r.notes || '-'}</td>
+          </tr>
+        `).join('');
+
+        content.innerHTML = `
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">My Orders</h2>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        content.innerHTML = '<div class="alert alert-danger">Error loading orders</div>';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
